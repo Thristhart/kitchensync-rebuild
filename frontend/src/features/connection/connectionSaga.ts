@@ -1,5 +1,5 @@
 import { LobbyMessage, MessageType } from "@common/messages";
-import { onConnected, onError, sendLobbyMessage } from "@data/lobby";
+import { onConnected, onDisconnected, onError, sendLobbyMessage } from "@data/lobby";
 import { ChatState } from "@features/chat/ChatState";
 import { FaucetState } from "@features/faucet/FaucetState";
 import { LobbyInfoState } from "@features/lobbyInfo/LobbyInfoState";
@@ -13,9 +13,12 @@ import { call, put, select, takeEvery } from "typed-redux-saga";
 
 const LobbyConnected = Symbol();
 const LobbyError = Symbol();
+const LobbyDisconnected = Symbol();
+
+type LobbyChannelMessage = LobbyMessage | typeof LobbyConnected | typeof LobbyError | typeof LobbyDisconnected;
 
 const makeLobbyChannel = () => {
-    return eventChannel<LobbyMessage | typeof LobbyConnected | typeof LobbyError>((emitter) => {
+    return eventChannel<LobbyChannelMessage>((emitter) => {
         onConnected((socket) => {
             socket.addEventListener("message", (messageEvent) => {
                 const messageString = messageEvent.data.toString();
@@ -26,6 +29,10 @@ const makeLobbyChannel = () => {
 
             emitter(LobbyConnected);
         });
+        onDisconnected(() => {
+            console.log("disconnected");
+            emitter(LobbyDisconnected);
+        });
         onError((event) => {
             emitter(LobbyError);
         });
@@ -33,7 +40,7 @@ const makeLobbyChannel = () => {
     });
 };
 
-const handleMessage = function* (message: LobbyMessage | typeof LobbyConnected | typeof LobbyError) {
+const handleMessage = function* (message: LobbyChannelMessage) {
     if (message === LobbyConnected) {
         const initialName = yield* select(selectUserNameLCE);
         sendLobbyMessage({ type: MessageType.IDENTITY, name: getDataOrPrevious(initialName)! });
@@ -43,6 +50,15 @@ const handleMessage = function* (message: LobbyMessage | typeof LobbyConnected |
         yield* put(
             ChatState.actions.addLogMessage({
                 message: "There was an error connecting to the lobby.",
+                timestamp: new Date(),
+            })
+        );
+        return;
+    }
+    if (message === LobbyDisconnected) {
+        yield* put(
+            ChatState.actions.addLogMessage({
+                message: "You've been disconnected.",
                 timestamp: new Date(),
             })
         );

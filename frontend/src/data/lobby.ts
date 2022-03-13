@@ -7,7 +7,22 @@ const host = location.host;
 
 const websocketProtocol = location.protocol === "http:" ? "ws" : "wss";
 
-const socket = new WebSocket(`${websocketProtocol}://${host}/api/lobby/${id}`);
+let socket: WebSocket;
+
+export function connect() {
+    socket = new WebSocket(`${websocketProtocol}://${host}/api/lobby/${id}`);
+    socket.addEventListener("open", () => {
+        connectCallbacks.forEach((cb) => cb(socket));
+    });
+    socket.addEventListener("close", () => {
+        disconnectCallbacks.forEach((cb) => cb());
+    });
+    socket.addEventListener("error", (e) => {
+        errorCallbacks.forEach((cb) => cb(e));
+    });
+}
+
+connect();
 
 export const sendLobbyMessage = (message: LobbyMessage) => {
     const stringified = JSON.stringify(message);
@@ -15,14 +30,19 @@ export const sendLobbyMessage = (message: LobbyMessage) => {
     socket.send(stringified);
 };
 
-export const onConnected = (connected: (websocket: WebSocket) => void) => {
-    socket.addEventListener("open", () => {
-        connected(socket);
-    });
+const connectCallbacks: ((websocket: WebSocket) => void)[] = [];
+export const onConnected = (connect: (websocket: WebSocket) => void) => {
+    connectCallbacks.push(connect);
 };
 
+const disconnectCallbacks: (() => void)[] = [];
+export const onDisconnected = (disconnected: () => void) => {
+    disconnectCallbacks.push(disconnected);
+};
+
+const errorCallbacks: ((event: Event) => void)[] = [];
 export const onError = (error: (event: Event) => void) => {
-    socket.addEventListener("error", error);
+    errorCallbacks.push(error);
 };
 
 export const getLobbyData = async (): Promise<LobbyData> => {
