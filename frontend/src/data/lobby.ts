@@ -14,7 +14,8 @@ export function connect() {
     socket.addEventListener("open", () => {
         connectCallbacks.forEach((cb) => cb(socket));
     });
-    socket.addEventListener("close", () => {
+    socket.addEventListener("close", (e) => {
+        console.error(e, JSON.stringify(e));
         disconnectCallbacks.forEach((cb) => cb());
     });
     socket.addEventListener("error", (e) => {
