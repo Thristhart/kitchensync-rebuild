@@ -1,5 +1,5 @@
 import { LobbyData, LobbyDataOverWire } from "@common/apiModels";
-import { LobbyMessage } from "@common/messages";
+import { LobbyMessage, MessageType } from "@common/messages";
 
 const id = location.pathname.split("/")[1];
 
@@ -8,6 +8,8 @@ const host = location.host;
 const websocketProtocol = location.protocol === "http:" ? "ws" : "wss";
 
 let socket: WebSocket;
+
+let keepAliveTimeout: number;
 
 export function connect() {
     socket = new WebSocket(`${websocketProtocol}://${host}/api/lobby/${id}`);
@@ -21,6 +23,10 @@ export function connect() {
     socket.addEventListener("error", (e) => {
         errorCallbacks.forEach((cb) => cb(e));
     });
+
+    keepAliveTimeout = window.setInterval(() => {
+        sendLobbyMessage({ type: MessageType.KEEP_ALIVE });
+    }, 10000);
 }
 
 connect();

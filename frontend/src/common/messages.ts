@@ -22,6 +22,7 @@ export enum MessageType {
     PAUSE = "PAUSE",
     SEEK = "SEEK",
     ENDED = "ENDED",
+    KEEP_ALIVE = "KEEP_ALIVE",
 }
 
 export interface IdentityMessage {
@@ -103,6 +104,9 @@ export interface SeekMessage {
 export interface EndedMessage {
     readonly type: MessageType.ENDED;
 }
+export interface KeepAliveMessage {
+    readonly type: MessageType.KEEP_ALIVE;
+}
 
 export type LobbyMessage =
     | IdentityMessage
@@ -124,4 +128,5 @@ export type LobbyMessage =
     | PlayMessage
     | PauseMessage
     | SeekMessage
-    | EndedMessage;
+    | EndedMessage
+    | KeepAliveMessage;
