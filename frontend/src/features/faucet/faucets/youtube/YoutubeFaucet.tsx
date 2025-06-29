@@ -234,6 +234,8 @@ export const YoutubeFaucet = () => {
     const onStateChange = useCallback((event: { data: YT.PlayerState }) => {
         youtubeCallbacksRef.current.onStateChange(event.data);
     }, []);
+    
+    const currentMedia = useSelector(selectCurrentMediaObject);
 
     return (
         <>
@@ -243,6 +245,7 @@ export const YoutubeFaucet = () => {
                 onPause={onPause}
                 onStateChange={onStateChange}
                 className="youtubeFaucet"
+                videoId={currentMedia?.url ? getIdFromYoutubeURL(currentMedia.url) : undefined}
                 opts={{
                     playerVars: {
                         playsinline: 1,
